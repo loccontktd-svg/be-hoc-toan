@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Bé Học Toán</title>
+<meta name="theme-color" content="#ffb703">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Bé Học Toán">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<style>
+  :root {
+    --bg: #fff7e6; --card: #ffffff; --ink: #3d2c1e; --muted: #8a7563;
+    --ok: #2bb673; --bad: #ef476f; --sun: #ffb703; --sky: #4cc9f0; --grape: #9b5de5;
+    --leaf: #80c342; --rose: #f15bb5; --orange: #fb8500;
+    --shadow: 0 6px 0 rgba(61, 44, 30, .12);
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; min-height: 100%;
+    background: linear-gradient(180deg, #c9ecff 0%, #e9f7ff 22%, var(--bg) 48%) fixed;
+    background-color: var(--bg);
+    color: var(--ink);
+    font-family: "Nunito", "Baloo 2", -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+    touch-action: manipulation; overscroll-behavior: none;
+  }
+  body { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); overflow-x: hidden; }
+  button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action: manipulation; background: none; }
+
+  /* Mây trôi */
+  .cloud { position: fixed; z-index: 0; pointer-events: none; width: 110px; height: 34px; background: #fff; border-radius: 40px; opacity: .9; animation: drift linear infinite; }
+  .cloud::before, .cloud::after { content: ""; position: absolute; background: #fff; border-radius: 50%; }
+  .cloud::before { width: 50px; height: 50px; left: 16px; top: -24px; }
+  .cloud::after { width: 38px; height: 38px; left: 54px; top: -16px; }
+  .cloud.c1 { top: 6%; animation-duration: 70s; }
+  .cloud.c2 { top: 18%; animation-duration: 95s; animation-delay: -40s; transform: scale(.7); }
+  .cloud.c3 { top: 11%; animation-duration: 120s; animation-delay: -80s; transform: scale(.5); opacity: .7; }
+  @keyframes drift { from { left: -120px; } to { left: 110vw; } }
+
+  .screen { position: relative; z-index: 1; display: none; min-height: 100vh; min-height: 100dvh; flex-direction: column; padding: 16px; max-width: 920px; margin: 0 auto; }
+  .screen.active { display: flex; animation: fadeIn .3s; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } }
+
+  .guide { font-size: 64px; line-height: 1; display: inline-block; cursor: pointer; animation: breathe 3s ease-in-out infinite; transform-origin: 50% 100%; }
+  @keyframes breathe { 50% { transform: scale(1.06, .96); } }
+  .guide.happy { animation: hop .6s; }
+  .guide.sad { animation: wobble .6s; }
+  @keyframes hop { 0%,100% { transform: translateY(0); } 30% { transform: translateY(-26px) rotate(-8deg); } 60% { transform: translateY(0) scale(1.1, .9); } }
+  @keyframes wobble { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-14deg); } 75% { transform: rotate(14deg); } }
+
+  /* ---------- Splash ---------- */
+  #splash { align-items: center; justify-content: center; text-align: center; gap: 10px; }
+  #splash .guide { font-size: clamp(110px, 30vw, 170px); }
+  .title { font-size: clamp(42px, 11vw, 72px); font-weight: 900; margin: 0; line-height: 1.05; }
+  .title span:nth-child(1) { color: var(--orange); } .title span:nth-child(2) { color: #1d9bd1; } .title span:nth-child(3) { color: var(--grape); }
+  .play-btn { font-size: clamp(30px, 8vw, 42px); font-weight: 900; color: #fff; background: var(--ok); padding: 18px 46px; border-radius: 999px; box-shadow: 0 10px 0 #1e8a56; margin-top: 18px; animation: pulse 1.6s ease-in-out infinite; }
+  .play-btn:active { transform: translateY(6px); box-shadow: 0 4px 0 #1e8a56; }
+  @keyframes pulse { 50% { scale: 1.06; } }
+
+  /* ---------- Home ---------- */
+  .home-head { display: flex; align-items: center; gap: 12px; margin: 4px 0 14px; }
+  .home-head .title { font-size: clamp(30px, 8vw, 48px); flex: 1; }
+  .chip { background: #fff; border-radius: 999px; padding: 8px 16px; font-size: 24px; font-weight: 900; box-shadow: var(--shadow); white-space: nowrap; }
+  .menu-row { display: flex; gap: 12px; margin-bottom: 16px; }
+  .menu-btn { flex: 1; background: #fff; border-radius: 22px; padding: 12px 8px; font-size: clamp(17px, 4.4vw, 22px); font-weight: 800; box-shadow: var(--shadow); white-space: nowrap; }
+  .menu-btn.icon-only { flex: 0 0 64px; font-size: 28px; }
+  .menu-btn:active, .chip:active { transform: translateY(3px); }
+  .games { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; padding-bottom: 20px; }
+  .game-card { position: relative; border-radius: 28px; padding: 22px 10px 12px; color: #fff; text-align: center; box-shadow: 0 8px 0 rgba(0,0,0,.18); display: flex; flex-direction: column; align-items: center; gap: 2px; animation: cardIn .45s both; animation-delay: calc(var(--i) * 45ms); }
+  @keyframes cardIn { from { opacity: 0; transform: scale(.7); } }
+  .game-card:active { transform: translateY(4px); box-shadow: 0 4px 0 rgba(0,0,0,.18); }
+  .game-card .ico { font-size: clamp(46px, 12vw, 64px); line-height: 1.1; filter: drop-shadow(0 3px 0 rgba(0,0,0,.12)); }
+  .game-card .name { font-size: clamp(19px, 4.8vw, 24px); font-weight: 900; text-shadow: 0 2px 0 rgba(0,0,0,.15); }
+  .game-card .best { font-size: 18px; letter-spacing: 2px; }
+  .game-card .best .off { filter: grayscale(1) brightness(1.6); opacity: .45; }
+  .game-card .lv { position: absolute; top: 8px; right: 10px; font-size: 13px; font-weight: 800; background: rgba(255,255,255,.28); padding: 2px 8px; border-radius: 99px; }
+
+  /* ---------- Game ---------- */
+  .topbar { display: flex; align-items: center; gap: 10px; }
+  .round-btn { width: 54px; height: 54px; border-radius: 50%; background: #fff; font-size: 26px; box-shadow: var(--shadow); flex: none; }
+  .round-btn:active { transform: translateY(3px); }
+  .dots { flex: 1; display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; background: #e6d9c6; transition: background .2s, transform .2s; }
+  .dot.cur { background: var(--sun); transform: scale(1.3); }
+  .dot.ok { background: var(--ok); } .dot.retry { background: var(--orange); }
+  .lv-chip { font-size: 15px; font-weight: 900; background: #fff; border-radius: 99px; padding: 6px 12px; box-shadow: var(--shadow); white-space: nowrap; }
+  .lv-chip.up { animation: lvUp 1.2s; }
+  @keyframes lvUp { 0% { background: #fff; } 20% { background: var(--sun); transform: scale(1.4); } 60% { transform: scale(1.2); } 100% { background: #fff; transform: scale(1); } }
+
+  .ask { display: flex; align-items: center; gap: 10px; margin: 14px 0 6px; }
+  .ask .guide { font-size: clamp(52px, 13vw, 84px); flex: none; }
+  .bubble { position: relative; flex: 1; background: #fff; border-radius: 26px; padding: 12px 18px; box-shadow: var(--shadow); font-size: clamp(22px, 6vw, 34px); font-weight: 900; line-height: 1.25; cursor: pointer; }
+  .bubble::before { content: ""; position: absolute; left: -12px; top: 50%; margin-top: -12px; border: 12px solid transparent; border-right-color: #fff; border-left: 0; }
+  .bubble .sub { font-size: .58em; color: var(--muted); font-weight: 700; margin-top: 2px; }
+  .bubble .hl { color: var(--orange); font-size: 1.2em; }
+  .bubble svg { vertical-align: middle; }
+  .speak-ico { font-size: .7em; opacity: .5; margin-left: 6px; }
+
+  .stage { flex: 1; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 12px; padding: 8px 0; }
+  .box { background: var(--card); border-radius: 24px; padding: 12px; box-shadow: var(--shadow); display: grid; gap: 4px 6px; justify-content: center; align-content: center; min-width: 80px; min-height: 70px; outline: 5px solid transparent; transition: transform .15s, outline-color .15s; }
+  .box.tap { cursor: pointer; }
+  .box.tap:active { transform: scale(.96); }
+  .box.good { outline-color: var(--ok); }
+  .box.wrong { outline-color: var(--bad); animation: shake .4s; }
+  .box.hint, .ans.hint { animation: hintGlow 1s ease-in-out infinite; }
+  @keyframes hintGlow { 50% { box-shadow: 0 0 0 8px rgba(255, 183, 3, .7); } }
+  .item { font-size: var(--isz, 48px); line-height: 1.12; text-align: center; position: relative; animation: popIn .35s both; animation-delay: calc(var(--i) * 35ms); cursor: pointer; }
+  @keyframes popIn { from { transform: scale(0); } 70% { transform: scale(1.15); } }
+  .item.gone > span { opacity: .3; filter: grayscale(.7); }
+  .item.gone::after { content: "✕"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--bad); font-weight: 900; font-size: .9em; text-shadow: 0 0 4px #fff; }
+  .item.counted { animation: bump .3s; }
+  .item.counted::before { content: attr(data-n); position: absolute; right: -4px; top: -6px; background: var(--ok); color: #fff; font-size: 15px; font-weight: 900; min-width: 24px; height: 24px; border-radius: 12px; display: flex; align-items: center; justify-content: center; padding: 0 4px; z-index: 2; }
+  @keyframes bump { 50% { transform: scale(1.25); } }
+  .op { font-size: clamp(52px, 13vw, 84px); line-height: 1; font-weight: 900; color: var(--grape); }
+  .choice-boxes { display: grid; gap: 14px; justify-content: center; align-items: stretch; width: 100%; }
+  .choice-boxes .box { justify-self: stretch; }
+  .shape-box { padding: 16px; }
+  .html-wrap { display: flex; justify-content: center; width: 100%; }
+  .shape-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; background: #fff; border-radius: 24px; padding: 14px; box-shadow: var(--shadow); max-width: 560px; }
+  .shape-row svg { animation: popIn .35s both; }
+  .seq { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .cell { width: clamp(64px, 18vw, 104px); height: clamp(64px, 18vw, 104px); background: #fff; border-radius: 18px; box-shadow: var(--shadow); display: flex; align-items: center; justify-content: center; font-size: clamp(40px, 11vw, 64px); font-weight: 900; }
+  .cell.q { background: #fff3c4; color: var(--orange); outline: 4px dashed var(--sun); animation: pulse 1.2s infinite; }
+  .cell.done { background: #d8f5e5; animation: bump .4s; }
+  .clock { width: min(84vw, 46vh, 420px); height: auto; filter: drop-shadow(0 6px 0 rgba(61,44,30,.12)); }
+  .notes { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; max-width: 600px; }
+  .note { width: clamp(140px, 40vw, 190px); height: clamp(74px, 21vw, 100px); border-radius: 10px; background: var(--c); border: 3px solid rgba(0,0,0,.15); box-shadow: var(--shadow); display: flex; align-items: center; justify-content: center; gap: 6px; position: relative; overflow: hidden; animation: popIn .35s both; }
+  .note::before { content: ""; position: absolute; inset: 6px; border: 2px dashed rgba(255,255,255,.7); border-radius: 6px; }
+  .note .nv { font-size: clamp(46px, 13vw, 62px); font-weight: 900; color: #3d2c1e; }
+  .note .nu { font-size: clamp(16px, 4.5vw, 22px); font-weight: 800; color: #3d2c1e; }
+
+  .answers { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin: 10px 0 8px; }
+  .ans { min-width: clamp(84px, 25vw, 130px); height: clamp(84px, 25vw, 130px); padding: 0 10px; border-radius: 28px; font-size: clamp(46px, 12vw, 70px); font-weight: 900; color: #fff; text-shadow: 0 3px 0 rgba(0,0,0,.15); box-shadow: 0 8px 0 rgba(0,0,0,.18); transition: transform .1s; animation: cardIn .35s both; animation-delay: calc(var(--i) * 70ms); }
+  .ans.txt { font-size: clamp(22px, 6vw, 30px); height: auto; min-height: 76px; padding: 10px 18px; min-width: 0; white-space: nowrap; }
+  .ans.emo { text-shadow: none; }
+  .ans:active { transform: translateY(4px); box-shadow: 0 4px 0 rgba(0,0,0,.18); }
+  .ans:disabled { background: #cfc5b9 !important; animation: shake .4s; opacity: .7; }
+  .ans.good { background: var(--ok) !important; transform: scale(1.1); }
+  @keyframes shake { 0%,100% { translate: 0 0; } 20% { translate: -10px 0; } 40% { translate: 10px 0; } 60% { translate: -6px 0; } 80% { translate: 6px 0; } }
+  .wrong { animation: shake .4s; }
+
+  .trace-stage { flex-direction: column; }
+  .trace-wrap { background: #fff; border-radius: 28px; box-shadow: var(--shadow); padding: 8px; outline: 5px solid transparent; }
+  .trace-wrap.good { outline-color: var(--ok); }
+  .trace-wrap canvas { display: block; touch-action: none; border-radius: 20px; background: repeating-linear-gradient(180deg, #fff 0 39px, #f4ede2 39px 41px); }
+
+  .praise { position: fixed; z-index: 20; left: 50%; top: 38%; translate: -50% -50%; pointer-events: none; font-size: clamp(40px, 12vw, 78px); font-weight: 900; color: var(--ok); text-shadow: 0 4px 0 #fff, 0 6px 0 rgba(0,0,0,.1); opacity: 0; white-space: nowrap; }
+  .praise.show { animation: pop 1s ease-out; }
+  @keyframes pop { 0% { opacity: 0; scale: .4; } 25% { opacity: 1; scale: 1.15; } 70% { opacity: 1; scale: 1; } 100% { opacity: 0; scale: 1; } }
+  .confetti { position: fixed; top: -20px; width: 12px; height: 18px; border-radius: 3px; pointer-events: none; z-index: 30; }
+
+  /* ---------- Result ---------- */
+  #result { align-items: center; justify-content: center; text-align: center; gap: 8px; }
+  #result .guide { font-size: clamp(80px, 22vw, 120px); animation: hop .8s 3; }
+  .res-title { font-size: clamp(34px, 9vw, 56px); font-weight: 900; margin: 0; }
+  .res-stars { font-size: clamp(60px, 17vw, 100px); letter-spacing: 6px; }
+  .res-stars span { display: inline-block; animation: starIn .5s both; }
+  .res-stars span:nth-child(2) { animation-delay: .25s; } .res-stars span:nth-child(3) { animation-delay: .5s; }
+  .res-stars .off { filter: grayscale(1); opacity: .3; }
+  @keyframes starIn { from { scale: 0; rotate: -90deg; } to { scale: 1; rotate: 0deg; } }
+  .res-score { font-size: clamp(19px, 5vw, 26px); color: var(--muted); line-height: 1.5; }
+  .res-score b { color: var(--ink); }
+  .lvup { display: inline-block; margin-top: 4px; background: var(--sun); color: #fff; font-weight: 900; padding: 4px 14px; border-radius: 99px; animation: bump .6s 3; }
+  .big-btn { font-size: clamp(21px, 5.6vw, 28px); font-weight: 900; padding: 14px 28px; border-radius: 999px; color: #fff; box-shadow: 0 8px 0 rgba(0,0,0,.15); margin: 6px; }
+  .big-btn.small { font-size: 20px; padding: 10px 22px; }
+  .big-btn:active { transform: translateY(4px); box-shadow: 0 4px 0 rgba(0,0,0,.15); }
+
+  /* ---------- Hành trình ---------- */
+  .page-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .page-head h2 { margin: 0; flex: 1; font-size: clamp(26px, 7vw, 38px); font-weight: 900; }
+  .info { background: #fff; border-radius: 20px; padding: 12px 16px; box-shadow: var(--shadow); font-size: 19px; margin-bottom: 16px; }
+  .map-list { display: flex; flex-direction: column; gap: 14px; padding-bottom: 24px; position: relative; }
+  .stop { display: flex; align-items: center; gap: 12px; background: #efe6d8; border-radius: 26px; padding: 10px 16px 10px 10px; width: min(88%, 520px); text-align: left; box-shadow: var(--shadow); }
+  .stop.right { align-self: flex-end; }
+  .stop.open { background: #fff; }
+  .stop.chosen { outline: 4px solid var(--sun); }
+  .stop-ico { font-size: 50px; width: 70px; height: 70px; flex: none; display: flex; align-items: center; justify-content: center; background: #fff7e6; border-radius: 50%; }
+  .stop:not(.open) .stop-ico { filter: grayscale(.6); opacity: .7; }
+  .stop-txt { display: flex; flex-direction: column; font-size: 20px; }
+  .stop-txt span { font-size: 15px; color: var(--muted); font-weight: 700; }
+
+  /* ---------- Sticker ---------- */
+  .stickers { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 12px; padding-bottom: 24px; }
+  .sticker { background: #fff; border-radius: 22px; padding: 10px 4px; box-shadow: var(--shadow); }
+  .sticker .st-e { font-size: 50px; filter: grayscale(1); opacity: .35; }
+  .sticker.own .st-e { filter: none; opacity: 1; }
+  .sticker .st-p { font-size: 15px; font-weight: 900; color: var(--muted); }
+  .sticker.own .st-p { color: var(--ok); }
+  .sticker.wiggle .st-e { animation: hop .6s; }
+
+  /* ---------- Hộp thoại ---------- */
+  .modal { position: fixed; inset: 0; z-index: 25; background: rgba(61,44,30,.45); display: none; align-items: center; justify-content: center; padding: 16px; }
+  .modal.open { display: flex; animation: fadeIn .2s; }
+  .modal-body { background: #fff; border-radius: 30px; padding: 22px; width: min(420px, 100%); text-align: center; box-shadow: 0 12px 0 rgba(0,0,0,.15); animation: cardIn .3s; }
+  .modal-body h2 { margin: 6px 0; font-size: 28px; }
+  .modal-body p { font-size: 20px; margin: 4px 0 12px; }
+  .unlock-bg { font-size: 54px; }
+  .unlock-friend { font-size: 110px; line-height: 1.1; animation: hop .8s 3; }
+  .tog { display: flex; align-items: center; justify-content: space-between; font-size: 22px; font-weight: 800; padding: 12px 6px; border-bottom: 2px solid #f3ece2; cursor: pointer; }
+  .tog input { display: none; }
+  .tog i { width: 62px; height: 34px; border-radius: 99px; background: #ddd; position: relative; transition: background .2s; flex: none; }
+  .tog i::after { content: ""; position: absolute; left: 4px; top: 4px; width: 26px; height: 26px; border-radius: 50%; background: #fff; transition: left .2s; box-shadow: 0 2px 3px rgba(0,0,0,.2); }
+  .tog input:checked + i { background: var(--ok); }
+  .tog input:checked + i::after { left: 32px; }
+</style>
+</head>
+<body>
+<div class="cloud c1"></div><div class="cloud c2"></div><div class="cloud c3"></div>
+
+<!-- Màn hình chào -->
+<section id="splash" class="screen active">
+  <div class="guide" id="splashGuide">🐻</div>
+  <h1 class="title"><span>Bé</span> <span>Học</span> <span>Toán</span></h1>
+  <button class="play-btn" id="btnStart">▶ Chơi nào!</button>
+</section>
+
+<!-- Trang chủ -->
+<section id="home" class="screen">
+  <div class="home-head">
+    <div class="guide" id="homeGuide">🐻</div>
+    <h1 class="title"><span>Bé</span> <span>Học</span> <span>Toán</span></h1>
+    <div class="chip">⭐ <span id="coins">0</span></div>
+  </div>
+  <div class="menu-row">
+    <button class="menu-btn" id="btnMap">🗺️ Hành trình</button>
+    <button class="menu-btn" id="btnShop">🎁 Sticker</button>
+    <button class="menu-btn icon-only" id="btnSettings" aria-label="Cài đặt">⚙️</button>
+  </div>
+  <div class="games" id="games"></div>
+</section>
+
+<!-- Chơi -->
+<section id="game" class="screen">
+  <div class="topbar">
+    <button class="round-btn" data-home aria-label="Về trang chủ">🏠</button>
+    <div class="dots" id="dots"></div>
+    <div class="lv-chip" id="lvChip">Cấp 1</div>
+    <button class="round-btn" id="btnRepeat" aria-label="Nghe lại câu hỏi">🔊</button>
+  </div>
+  <div class="ask">
+    <div class="guide" id="gameGuide">🐻</div>
+    <div class="bubble" id="question"></div>
+  </div>
+  <div class="stage" id="stage"></div>
+  <div class="answers" id="answers"></div>
+</section>
+
+<!-- Kết quả -->
+<section id="result" class="screen">
+  <div class="guide" id="resGuide">🐻</div>
+  <p class="res-title" id="resTitle">Giỏi quá!</p>
+  <div class="res-stars" id="resStars"></div>
+  <div class="res-score" id="resScore"></div>
+  <div>
+    <button class="big-btn" style="background:var(--ok)" id="btnAgain">🔁 Chơi tiếp</button>
+    <button class="big-btn" style="background:var(--sky)" data-home>🏠 Trang chủ</button>
+  </div>
+</section>
+
+<!-- Hành trình -->
+<section id="map" class="screen">
+  <div class="page-head">
+    <button class="round-btn" data-home aria-label="Về trang chủ">🏠</button>
+    <h2>🗺️ Hành trình</h2>
+  </div>
+  <div class="info" id="mapInfo"></div>
+  <div class="map-list" id="mapList"></div>
+</section>
+
+<!-- Sticker -->
+<section id="shop" class="screen">
+  <div class="page-head">
+    <button class="round-btn" data-home aria-label="Về trang chủ">🏠</button>
+    <h2>🎁 Sticker</h2>
+    <div class="chip">⭐ <span id="shopCoins">0</span></div>
+  </div>
+  <div class="info">Chơi giỏi để nhận ⭐, rồi đổi lấy sticker bé thích nhé!</div>
+  <div class="stickers" id="stickers"></div>
+</section>
+
+<div class="modal" id="modal"><div class="modal-body" id="modalBody"></div></div>
+<div class="praise" id="praise"></div>
+
+<script src="phrases.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
