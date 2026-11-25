@@ -43,6 +43,16 @@
     { need: 120, place: "Mặt Trăng", bg: "🌙", friend: { id: "alien", e: "👽", n: "Bạn Ngoài Hành Tinh" } },
   ];
 
+  // Gia đình của bé: ảnh chibi lưu riêng trong máy (IndexedDB), không đưa lên mạng.
+  // Đổi tên ở đây (hoặc trong app) rồi chạy tools	ao_giong.bat để có giọng đọc tên mới.
+  const FAMILY = [
+    { id: "ong", n: "Ông" },
+    { id: "ba", n: "Bà" },
+    { id: "bo", n: "Bố" },
+    { id: "me", n: "Mẹ" },
+    { id: "chi", n: "Chị" },
+  ];
+
   const GAME_NAMES = {
     count: "Đếm số", find: "Tìm số", more: "Nhiều hay ít", add: "Phép cộng", sub: "Phép trừ",
     trace: "Tập tô số", shapes: "Hình học", pattern: "Quy luật", clock: "Xem đồng hồ", money: "Đếm tiền",
@@ -65,6 +75,9 @@
     time: (h, half) => (half ? `${h} giờ rưỡi` : `${h} giờ`),
     money: () => "Có tất cả bao nhiêu tiền?",
     moneyVal: (k) => `${k} nghìn đồng`,
+    famPraise: (n) => `${n} khen bé giỏi quá!`,
+    famCheer: (n) => `${n} thương bé nhất!`,
+    famGuide: (n) => `${n} sẽ đi cùng bé!`,
     unlock: (m) => `Bé đã đến ${m.place}! Bé có bạn mới là ${m.friend.n}!`,
   };
 
@@ -87,6 +100,7 @@
     shopOk: "Bé đã có sticker mới!",
     shopNeed: "Bé cần thêm ngôi sao nữa nhé!",
     guide: "Bạn ấy sẽ đi cùng bé!",
+    famSticker: "Bé có sticker gia đình mới!",
   };
 
   // Tên file giọng = mã băm của câu (giống nhau ở trình duyệt và Node)
@@ -113,12 +127,13 @@
     for (let h = 1; h <= 12; h++) { add(P.time(h, false)); add(P.time(h, true)); }
     for (let k = 1; k <= 20; k++) add(P.moneyVal(k));
     for (const m of MAP) add(P.unlock(m));
+    for (const f of FAMILY) { add(f.n); add(P.famPraise(f.n)); add(P.famCheer(f.n)); add(P.famGuide(f.n)); }
     for (const v of Object.values(GAME_NAMES)) add(v);
     for (const v of Object.values(T)) (Array.isArray(v) ? v : [v]).forEach(add);
     return [...out];
   }
 
-  const PH = { THINGS, SHAPES, MAP, GAME_NAMES, P, T, hash, allPhrases };
+  const PH = { THINGS, SHAPES, MAP, FAMILY, GAME_NAMES, P, T, hash, allPhrases };
   root.PH = PH;
   if (typeof module !== "undefined" && module.exports) module.exports = PH;
 })(typeof window !== "undefined" ? window : globalThis);

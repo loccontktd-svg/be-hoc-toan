@@ -1,7 +1,7 @@
 (() => {
   "use strict";
   const PH = window.PH;
-  const { THINGS, SHAPES, MAP, GAME_NAMES, P, T } = PH;
+  const { THINGS, SHAPES, MAP, FAMILY, GAME_NAMES, P, T } = PH;
 
   // ================= Tiện ích =================
   const $ = (id) => document.getElementById(id);
@@ -14,14 +14,42 @@
 
   // ================= Lưu tiến trình =================
   const SAVE_KEY = "bht_v2";
-  const DEF = { coins: 0, earned: 0, best: {}, level: {}, review: {}, owned: [], guide: "bear", voice: true, music: true, sfx: true };
+  const DEF = { coins: 0, earned: 0, best: {}, level: {}, review: {}, owned: [], guide: "bear", famNames: {}, voice: true, music: true, sfx: true };
   let S = (() => {
     try { return Object.assign({}, DEF, JSON.parse(localStorage.getItem(SAVE_KEY)) || {}); } catch { return Object.assign({}, DEF); }
   })();
   const save = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch {} };
 
-  const friends = () => MAP.filter((m) => S.earned >= m.need).map((m) => m.friend);
+  // ================= Gia đình (ảnh chỉ lưu trong máy: IndexedDB) =================
+  const FAM_IMG = {}; // id -> [dataURL, ...]
+  const famName = (f) => (S.famNames[f.id] || f.n);
+  const famList = () => FAMILY.filter((f) => (FAM_IMG[f.id] || []).length)
+    .map((f) => ({ id: "fam_" + f.id, fid: f.id, n: famName(f), img: FAM_IMG[f.id][0], imgs: FAM_IMG[f.id], fam: true }));
+  const idb = (() => {
+    let dbp = null;
+    const open = () => dbp || (dbp = new Promise((res, rej) => {
+      const r = indexedDB.open("bht_family", 1);
+      r.onupgradeneeded = () => r.result.createObjectStore("img");
+      r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+    }));
+    const tx = (mode, fn) => open().then((db) => new Promise((res, rej) => {
+      const t = db.transaction("img", mode), st = t.objectStore("img"), out = fn(st);
+      t.oncomplete = () => res(out && out.result); t.onerror = () => rej(t.error);
+    }));
+    return {
+      get: (k) => tx("readonly", (st) => st.get(k)),
+      set: (k, v) => tx("readwrite", (st) => st.put(v, k)),
+    };
+  })();
+  async function loadFamily() {
+    try { for (const f of FAMILY) FAM_IMG[f.id] = (await idb.get(f.id)) || []; } catch {}
+  }
+  const saveFam = (id) => idb.set(id, FAM_IMG[id] || []).catch(() => alert("Không lưu được ảnh (bộ nhớ máy đầy?)"));
+
+  const friends = () => [...famList(), ...MAP.filter((m) => S.earned >= m.need).map((m) => m.friend)];
   const guide = () => (friends().find((f) => f.id === S.guide) || MAP[0].friend);
+  const faceHTML = (f) => (f.img ? `<img class="chibi" src="${f.img}" alt="">` : f.e);
+  const setFace = (id, f) => { $(id).innerHTML = faceHTML(f); };
 
   // ================= Âm thanh =================
   let ac = null;
@@ -409,7 +437,7 @@
 
   function renderHome() {
     const g = guide();
-    $("homeGuide").textContent = g.e;
+    setFace("homeGuide", g);
     $("coins").textContent = S.coins;
     const box = $("games"); box.innerHTML = "";
     GAMES.forEach((gm, i) => {
@@ -431,7 +459,7 @@
   function startGame(gm) {
     game = gm; idx = 0; score = 0; results = [];
     lvl = Math.min(S.level[gm.id] || 1, gm.maxLevel); startLvl = lvl; streakOK = 0; streakBad = 0;
-    $("gameGuide").textContent = guide().e;
+    setFace("gameGuide", guide());
     show("game");
     nextQuestion();
   }
@@ -629,8 +657,12 @@
       sfx.good();
       if (first) recordResult(true); // câu sai đã được ghi khi bé chọn sai lần đầu
       if (q.onCorrect) q.onCorrect();
-      const pr = opts.praise || (first ? pick(T.praise) : T.okAfterRetry);
-      praise(pr);
+      let pr = opts.praise || (first ? pick(T.praise) : T.okAfterRetry);
+      praise(pr); // chữ ngắn trên màn hình
+      const fam = famList();
+      if (first && !opts.praise && fam.length && Math.random() < 0.45) {
+        const m = pick(fam); pr = P.famPraise(m.n); famPop(m); // người thân hiện ra và khen
+      }
       if (first) confetti(18);
       const myQ = q;
       await Promise.race([Promise.all([sayList([pr, q.reveal]), sleep(1100)]), sleep(4500)]);
@@ -658,6 +690,14 @@
     } else {
       say(wrongLine);
     }
+  }
+
+  function famPop(m) {
+    const el = document.createElement("div");
+    el.className = "fam-pop" + (Math.random() < 0.5 ? " left" : "");
+    el.innerHTML = `<img src="${pick(m.imgs)}" alt=""><b>${m.n}</b>`;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 2600);
   }
 
   function praise(text) {
@@ -782,7 +822,7 @@
     S.coins += stars; S.earned += stars;
     save();
     const leveled = lvl > startLvl;
-    $("resGuide").textContent = guide().e;
+    setFace("resGuide", guide());
     $("resTitle").textContent = ["Mình chơi lại nhé! 🤗", "Cố lên nhé! 💪", "Giỏi lắm! 🎉", "Siêu giỏi! 🏆"][stars];
     $("resStars").innerHTML = [0, 1, 2].map((k) => `<span class="${k < stars ? "" : "off"}">⭐</span>`).join("");
     $("resScore").innerHTML = `Đúng ngay lần đầu: <b>${score}/${ROUND_LEN}</b> câu` +
@@ -819,6 +859,14 @@
     $("mapInfo").innerHTML = next
       ? `Bé có <b>${S.earned}</b> ⭐. Còn <b>${next.need - S.earned}</b> ⭐ nữa để đến <b>${next.place}</b> ${next.bg}`
       : `Bé đã đi hết hành trình! 🏆`;
+    famList().forEach((f) => {
+      const d = document.createElement("button");
+      d.className = "stop open fam" + (S.guide === f.id ? " chosen" : "");
+      d.innerHTML = `<div class="stop-ico">${faceHTML(f)}</div>
+        <div class="stop-txt"><b>🏠 Gia đình</b><span>${f.n}${S.guide === f.id ? " · đang đi cùng bé" : " · chạm để chọn"}</span></div>`;
+      d.onclick = () => { sfx.tap(); S.guide = f.id; save(); say(P.famGuide(f.n)); renderMap(); };
+      el.appendChild(d);
+    });
     MAP.forEach((m, i) => {
       const open = S.earned >= m.need;
       const d = document.createElement("button");
@@ -845,6 +893,20 @@
   function renderShop() {
     $("shopCoins").textContent = S.coins;
     const el = $("stickers"); el.innerHTML = "";
+    famList().forEach((f) => f.imgs.forEach((src, k) => {
+      const key = `fam:${f.fid}:${k}`, price = 5, own = S.owned.includes(key);
+      const b = document.createElement("button");
+      b.className = "sticker fam" + (own ? " own" : "");
+      b.innerHTML = `<div class="st-e"><img src="${src}" alt=""></div><div class="st-p">${own ? "✓ " + f.n : price + " ⭐"}</div>`;
+      b.onclick = () => {
+        if (own) { sfx.pop(); say(P.famCheer(f.n)); b.classList.remove("wiggle"); void b.offsetWidth; b.classList.add("wiggle"); return; }
+        if (S.coins < price) { sfx.bad(); say(T.shopNeed); b.classList.remove("wrong"); void b.offsetWidth; b.classList.add("wrong"); return; }
+        S.coins -= price; S.owned.push(key); save();
+        sfx.win(); confetti(40); say(T.famSticker);
+        renderShop();
+      };
+      el.appendChild(b);
+    }));
     STICKERS.forEach(([e, price]) => {
       const own = S.owned.includes(e);
       const b = document.createElement("button");
@@ -866,7 +928,9 @@
   function renderSettings() {
     const row = (key, label) => `<label class="tog"><span>${label}</span><input type="checkbox" data-k="${key}" ${S[key] ? "checked" : ""}><i></i></label>`;
     modal(`<h2>⚙️ Cài đặt</h2>${row("voice", "🗣️ Giọng đọc")}${row("music", "🎵 Nhạc nền")}${row("sfx", "🔔 Âm thanh")}
+      <button class="big-btn small" id="btnFamily" style="background:#f4a261">👨‍👩‍👧 Gia đình của bé</button>
       <button class="big-btn" style="background:var(--sky)" data-close>Xong</button>`);
+    $("btnFamily").onclick = () => { sfx.tap(); renderFamily(); };
     $("modalBody").querySelectorAll("input[data-k]").forEach((inp) => {
       inp.onchange = () => {
         S[inp.dataset.k] = inp.checked; save();
@@ -874,6 +938,91 @@
         if (inp.dataset.k === "voice" && !inp.checked) stopVoice();
       };
     });
+  }
+
+  // ---------- Gia đình: bố mẹ thêm ảnh chibi ----------
+  function shrinkImage(file, max = 512) {
+    return new Promise((res, rej) => {
+      const url = URL.createObjectURL(file), im = new Image();
+      im.onload = () => {
+        const k = Math.min(1, max / Math.max(im.width, im.height));
+        const c = document.createElement("canvas");
+        c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
+        c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        let d = c.toDataURL("image/webp", 0.9);
+        if (!d.startsWith("data:image/webp")) d = c.toDataURL("image/png");
+        res(d);
+      };
+      im.onerror = () => { URL.revokeObjectURL(url); rej(new Error("Ảnh lỗi")); };
+      im.src = url;
+    });
+  }
+  function pickFiles(accept, multiple) {
+    return new Promise((res) => {
+      const inp = document.createElement("input");
+      inp.type = "file"; inp.accept = accept; inp.multiple = multiple;
+      inp.onchange = () => res([...inp.files]);
+      inp.click();
+    });
+  }
+  function renderFamily() {
+    const rows = FAMILY.map((f) => {
+      const imgs = FAM_IMG[f.id] || [];
+      return `<div class="fam-row" data-id="${f.id}">
+        <div class="fam-thumbs">${imgs.length ? imgs.map((s) => `<img src="${s}" alt="">`).join("") : '<span class="fam-empty">📷</span>'}</div>
+        <input class="fam-name" value="${famName(f).replace(/[&"<]/g, (c) => ({ "&": "&amp;", '"': "&quot;", "<": "&lt;" })[c])}" placeholder="${f.n}">
+        <div class="fam-btns"><button data-act="add">➕ Ảnh</button>${imgs.length ? '<button data-act="clear">🗑️</button>' : ""}</div>
+      </div>`;
+    }).join("");
+    modal(`<h2>👨‍👩‍👧 Gia đình của bé</h2>
+      <p class="fam-note">Ảnh chỉ lưu trong máy này, không gửi đi đâu. Mỗi người tối đa 6 ảnh.</p>
+      ${rows}
+      <button class="big-btn small" id="famImport" style="background:#90be6d">📦 Nhập gói ảnh gia đình</button>
+      <button class="big-btn" style="background:var(--sky)" data-close>Xong</button>`, () => renderHome());
+    const body = $("modalBody");
+    body.querySelectorAll(".fam-row").forEach((row) => {
+      const id = row.dataset.id;
+      row.querySelector(".fam-name").onchange = (e) => {
+        const v = e.target.value.trim(); const f = FAMILY.find((x) => x.id === id);
+        if (!v || v === f.n) delete S.famNames[id]; else S.famNames[id] = v;
+        save();
+      };
+      row.querySelectorAll("button[data-act]").forEach((b) => {
+        b.onclick = async () => {
+          sfx.tap();
+          if (b.dataset.act === "clear") {
+            if (!confirm("Xóa hết ảnh của " + famName(FAMILY.find((x) => x.id === id)) + "?")) return;
+            FAM_IMG[id] = [];
+          } else {
+            const files = await pickFiles("image/*", true);
+            for (const file of files) {
+              try { (FAM_IMG[id] || (FAM_IMG[id] = [])).push(await shrinkImage(file)); } catch {}
+            }
+            FAM_IMG[id] = FAM_IMG[id].slice(-6);
+          }
+          await saveFam(id); renderFamily();
+        };
+      });
+    });
+    $("famImport").onclick = async () => {
+      sfx.tap();
+      const [file] = await pickFiles(".json,application/json,text/plain", false);
+      if (!file) return;
+      try {
+        const pack = JSON.parse(await file.text());
+        let n = 0;
+        for (const m of pack.members || []) {
+          if (!FAMILY.some((f) => f.id === m.id) || !Array.isArray(m.images)) continue;
+          FAM_IMG[m.id] = m.images.filter((s) => typeof s === "string" && s.startsWith("data:image/")).slice(0, 6);
+          if (m.name) S.famNames[m.id] = m.name;
+          await saveFam(m.id); n++;
+        }
+        save();
+        alert(n ? `Đã nhập ảnh của ${n} người!` : "Gói ảnh không đúng.");
+      } catch { alert("Không đọc được gói ảnh."); }
+      renderFamily();
+    };
   }
 
   // ================= Nút =================
@@ -892,7 +1041,8 @@
   $("question").onclick = repeatQ;
   $("btnRepeat").onclick = repeatQ;
 
-  $("splashGuide").textContent = guide().e;
+  setFace("splashGuide", guide());
+  loadFamily().then(() => setFace("splashGuide", guide()));
 
   // Dùng cho kiểm thử tự động
   window.__bht = { get q() { return q; }, get correctEl() { return correctEl; }, get state() { return S; }, GAMES };

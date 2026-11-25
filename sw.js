@@ -1,6 +1,6 @@
 // Lưu app vào máy để chơi được khi không có mạng.
 // Mỗi lần sửa app, tăng số VERSION để điện thoại tải bản mới.
-const VERSION = "be-hoc-toan-v4";
+const VERSION = "be-hoc-toan-v5";
 const VOICE_CACHE = "be-hoc-toan-voice"; // giọng đọc giữ lại qua các phiên bản
 const FILES = ["./", "index.html", "app.js", "phrases.js", "manifest.json", "icon-180.png", "icon-192.png", "icon-512.png"];
 

@@ -208,6 +208,26 @@
   .tog i::after { content: ""; position: absolute; left: 4px; top: 4px; width: 26px; height: 26px; border-radius: 50%; background: #fff; transition: left .2s; box-shadow: 0 2px 3px rgba(0,0,0,.2); }
   .tog input:checked + i { background: var(--ok); }
   .tog input:checked + i::after { left: 32px; }
+  /* Gia đình */
+  .guide img.chibi, .stop-ico img.chibi { height: 1.3em; width: auto; max-width: 1.6em; object-fit: contain; display: block; filter: drop-shadow(0 3px 0 rgba(0,0,0,.12)); }
+  .stop-ico img.chibi { height: 62px; max-width: 66px; }
+  .stop.fam { border: 3px solid #f4a261; }
+  .sticker.fam .st-e { height: 64px; display: flex; justify-content: center; }
+  .sticker .st-e img { height: 64px; width: auto; max-width: 90px; object-fit: contain; }
+  .fam-pop { position: fixed; z-index: 21; right: 8px; bottom: 8px; pointer-events: none; text-align: center; animation: famIn 2.6s ease-out forwards; }
+  .fam-pop.left { right: auto; left: 8px; }
+  .fam-pop img { height: min(28vh, 240px); width: auto; display: block; filter: drop-shadow(0 6px 0 rgba(0,0,0,.12)); }
+  .fam-pop b { display: inline-block; background: #fff; border-radius: 14px; padding: 2px 12px; font-size: 20px; box-shadow: var(--shadow); }
+  @keyframes famIn { 0% { transform: translateY(110%) } 15% { transform: translateY(-4%) } 22%, 80% { transform: translateY(0) rotate(0) } 50% { transform: rotate(-3deg) } 100% { transform: translateY(110%) } }
+  .fam-note { font-size: 15px !important; color: var(--muted); }
+  .fam-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 2px dashed #f1e4d0; }
+  .fam-thumbs { display: flex; gap: 2px; width: 92px; flex: none; overflow: hidden; }
+  .fam-thumbs img { height: 46px; width: auto; }
+  .fam-empty { font-size: 30px; opacity: .5; }
+  .fam-name { flex: 1; min-width: 0; font: inherit; font-size: 18px; font-weight: 800; padding: 8px 10px; border: 2px solid #f1e4d0; border-radius: 12px; }
+  .fam-btns { display: flex; gap: 4px; }
+  .fam-btns button { font: inherit; font-size: 15px; font-weight: 800; border: 0; border-radius: 12px; padding: 8px 10px; background: #ffe8cc; }
+  #modalBody { max-height: 92vh; overflow-y: auto; }
 </style>
 </head>
 <body>
